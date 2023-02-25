@@ -15,54 +15,61 @@ contract RingSignature {
         uint256[] s;
     }
 
-    struct Ring {
-        PublicKey[] publicKeys;
-        uint256 l;
-        uint256 q;
-    }
 
-    function sign(bytes32 message, Ring memory ring, uint256 z) public returns (Signature memory) {
-        uint256 n = ring.publicKeys.length;
+    PublicKey[] publicKeys;
+    uint256 l;
+    uint256 q;
+
+    Signature  public sig;
+    
+
+
+    // constructor() public {
+    //     ring = generateRing(4);
+    // }
+
+    function sign(string memory message,  uint256 z) public  {
+        uint256 n = publicKeys.length;
 
         uint256 p = permut(message);
         uint256[] memory s = new uint256[](n);
 
         uint256 u = uint256(keccak256(abi.encodePacked(block.timestamp, blockhash(block.number - 1))));
         uint256 c = u;
-        uint256 v = E(u, p, ring.q);
+        uint256 v = E(u, p, q);
 
         for (uint256 i = (z + 1) % n; i != z; i = (i + 1) % n) {
             s[i] = uint256(keccak256(abi.encodePacked(block.timestamp, blockhash(block.number - 1))));
-            uint256 e = g(s[i], ring.publicKeys[i].e, ring.publicKeys[i].n, p, ring.l);
-            v = E(v ^ e, p, ring.q);
+            uint256 e = g(s[i], publicKeys[i].e, publicKeys[i].n, p, l);
+            v = E(v ^ e, p, q);
             if ((i + 1) % n == z) {
                 c = v;
             }
         }
 
-        s[z] = g(v ^ u, ring.publicKeys[z].e, ring.publicKeys[z].n, p, ring.l);
+        s[z] = g(v ^ u, publicKeys[z].e, publicKeys[z].n, p, l);
         Signature memory signature = Signature(bytes32(c), s);
-        return signature;
+        sig = signature;
     }
 
-    function verify(bytes32 message, Signature memory signature, Ring memory ring) public view returns (bool) {
-        uint256 n = ring.publicKeys.length;
+    function verify(string memory message) public view returns (bool) {
+        uint256 n = publicKeys.length;
 
         uint256 p = permut(message);
         uint256[] memory y = new uint256[](n);
         for (uint256 i = 0; i < n; i++) {
-            y[i] = g(signature.s[i], ring.publicKeys[i].e, ring.publicKeys[i].n, p, ring.l);
+            y[i] = g(sig.s[i], publicKeys[i].e, publicKeys[i].n, p, l);
         }
 
-        uint256 v =uint256(signature.c);
+        uint256 v =uint256(sig.c);
         for (uint256 i = 0; i < n; i++) {
-            v = E(v ^ y[i], p, ring.q);
+            v = E(v ^ y[i], p, q);
         }
 
-        return v == uint256(signature.c >> 0);
+        return v == uint256(sig.c >> 0);
     }
 
-    function permut(bytes32 m) internal pure returns (uint256) {
+    function permut(string memory m) internal pure returns (uint256) {
         return uint256(keccak256(abi.encodePacked(m)));
     }
 
@@ -96,5 +103,25 @@ contract RingSignature {
         uint256 q = a / b;
         uint256 r = a % b;
         return (q, r);
+    }
+
+    function generateRing(uint256 size) public {
+
+        PublicKey[] memory publicKeys = new PublicKey[](size);
+        for (uint256 i = 0; i < size; i++) {
+            publicKeys[i] = PublicKey({
+                n: 0,
+                e: 0
+            });
+        }
+
+        l= 1024;
+        q= 1 << 255;
+
+        // return Ring({
+        //     publicKeys: publicKeys,
+        //     l: 1024,
+        //     q: 1 << 255
+        // });
     }
 }
