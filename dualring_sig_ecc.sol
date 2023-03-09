@@ -1,90 +1,94 @@
-pragma solidity 0.8.0;
+pragma solidity 0.8.10;
 
 // import "@openzeppelin/contracts/utils/Arrays.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "elliptic-curve-solidity/contracts/EllipticCurve.sol";
+// import "@openzeppelin/contracts/utils/Counters.sol";
+// import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+// import "elliptic-curve-solidity/contracts/EllipticCurve.sol";
 
-contract DualRing {
+contract DualRingEcc {
     // using Arrays for uint256[];
-    using Counters for Counters.Counter;
+    // using Counters for Counters.Counter;
 
     // Define elliptic curve parameters
-    uint256 public constant GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
-    uint256 public constant GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
-    uint256 public constant AA = 0;
-    uint256 public constant BB = 7;
-    uint256 public constant PP = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
-
-
-
-    function derivePubKey(uint256 privKey) internal pure returns(uint256 qx, uint256 qy) {
-        (qx, qy) = EllipticCurve.ecMul(
-        privKey,
-        GX,
-        GY,
-        AA,
-        PP
-        );
-    }
-
-    function mul(uint256 x, uint256 y, uint256 val) pure internal returns (uint256 qx, uint256 qy)
-    {
-        (qx, qy) = EllipticCurve.ecMul(
-        val,
-        x,
-        y,
-        AA,
-        PP
-        );
-    }
-
-    function invMod(uint256 val, uint256 p) pure internal returns (uint256)
-    {
-        return EllipticCurve.invMod(val,p);
-    }
-
-    function expMod(uint256 val, uint256 e, uint256 p) pure internal returns (uint256)
-    {
-        return EllipticCurve.expMod(val,e,p);
-    }
-
-
-    function getY(uint8 prefix, uint256 x) pure internal returns (uint256)
-    {
-        return EllipticCurve.deriveY(prefix,x,AA,BB,PP);
-    }
-
-
-    function onCurve(uint256 x, uint256 y) pure internal returns (bool)
-    {
-        return EllipticCurve.isOnCurve(x,y,AA,BB,PP);
-    }
-
-    function inverse(uint256 x, uint256 y) pure internal returns (uint256, 
-    uint256) {
-        return EllipticCurve.ecInv(x,y,PP);
-    }
-
-    function subtract(uint256 x1, uint256 y1,uint256 x2, uint256 y2 ) pure internal returns (uint256, 
-    uint256) {
-        return EllipticCurve.ecSub(x1,y1,x2,y2,AA,PP);
-    }
-
-    function add(uint256 x1, uint256 y1,uint256 x2, uint256 y2 ) pure internal returns (uint256, 
-    uint256) {
-        return EllipticCurve.ecAdd(x1,y1,x2,y2,AA,PP);
-    }
+    uint256 constant GX = 9727523064272218541460723335320998459488975639302513747055235660443850046724;
+    uint256 constant GY = 5031696974169251245229961296941447383441169981934237515842977230762345915487;
+    uint256 constant AA = 0;
+    uint256 constant BB = 7;
+    uint256 constant PP = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
+    
+    
 
     // Define structs for public and private keys
-    struct PublicKey {
+
+    //  function multiply(Point memory p, uint256 k)
+    //     public
+    //     returns (Point memory)
+    // {
+    //     uint256[3] memory input;
+    //     input[0] = p.x;
+    //     input[1] = p.y;
+    //     input[2] = k;
+
+    //     bool success;
+    //     uint256[2] memory result;
+
+    //     assembly {
+    //         success := call(not(0), 0x07, 0, input, 96, result, 64)
+    //     }
+    //     require(success, "elliptic curve multiplication failed");
+
+    //     return Point(result[0], result[1]);
+    // }
+
+    // function add(Point memory p1, Point memory p2)
+    //     internal
+    //     returns (Point memory)
+    // {
+    //     uint256[4] memory input;
+    //     input[0] = p1.x;
+    //     input[1] = p1.y;
+    //     input[2] = p2.x;
+    //     input[3] = p2.y;
+
+    //     bool success;
+    //     uint256[2] memory result;
+    //     assembly {
+    //         success := call(not(0), 0x06, 0, input, 128, result, 64)
+    //     }
+
+    //     require(success, "bn256 addition failed");
+    //     return Point(result[0], result[1]);
+    // }
+
+    // function sub(Point memory p1, Point memory p2)
+    //     public
+    //     returns (Point memory)
+    // {
+    //     uint256[4] memory input;
+    //     input[0] = p1.x;
+    //     input[1] = p1.y;
+    //     input[2] = p2.x;
+    //     input[3] = PP - p2.y;
+
+    //     bool success;
+    //     uint256[2] memory result;
+    //     assembly {
+    //         success := call(not(0), 0x06, 0, input, 128, result, 64)
+    //     }
+
+    //     require(success, "bn256 subtraction failed");
+    //     return Point(result[0], result[1]);
+    // }
+
+    struct Point {
         uint256 x;
         uint256 y;
     }
 
-    struct PrivateKey {
-        uint256 k;
-    }
+
+    // struct PrivateKey {
+    //     uint256 k;
+    // }
 
     // Define a struct for a signature
     struct Signature {
@@ -92,39 +96,63 @@ contract DualRing {
         uint256 z;
     }
 
+    // Point G = Point({ x : GX , y : GY});
+
     // Define a counter for generating private keys
-    Counters.Counter private _privateKeyNonce;
+    // Counters.Counter private _privateKeyNonce;
 
     // Define arrays for public and private keys
-    PublicKey[] public publicKeys;
-    PrivateKey[] public privateKeys;
+    Point[] public publicKeys;
+    // PrivateKey[] public privateKeys;
+
+    uint256[] public sks;
+
+    Signature public sig;
 
     // Constructor to initialize the contract with public keys
-    constructor(uint _ring_size) {
-        require(_ring_size >= 2, "DualRing: At least two public keys are required");
-        generateKeys(_ring_size);
+    // constructor(uint _ring_size) {
+    //     require(_ring_size >= 2, "DualRing: At least two public keys are required");
+    //     generateKeys(2);
         
         
-    }
+    // }
 
     // Function to generate a new private key
     function generateKeys(uint _ring_size) public {
-        for (uint256 i = 0; i < _ring_size; i++) {
-            PrivateKey memory privateKey = PrivateKey({
-                k: uint256(keccak256(abi.encodePacked( _privateKeyNonce.current())))
-            });
-            _privateKeyNonce.increment();
-            uint256 _x;
-            uint256 _y;
-            (_x,_y) = derivePubKey(privateKey.k);
-            PublicKey memory publicKey= PublicKey({x:_x, y:_y});
-            publicKeys.push(publicKey);
-            privateKeys.push(privateKey);
+        for (uint i = 0; i < _ring_size; i++) {
+            // PrivateKey memory privateKey = PrivateKey({
+            //     k: uint256(keccak256(abi.encodePacked( block.timestamp)))
+            //     // k: 2
+            // });
+            // uint256 _x;
+            // uint256 _y;
+            // Point memory pk = multiply(G, privateKey.k);
+            // uint k = uint256(keccak256(abi.encodePacked( block.timestamp)));
+            uint k =i;
+            sks.push(k);
+
+            uint256[3] memory input;
+            input[0] = GX;
+            input[1] = GY;
+            input[2] = k;
+
+            bool success;
+            uint256[2] memory result;
+
+            assembly {
+                success := call(not(0), 0x07, 0, input, 96, result, 64)
+                switch success case 0 { revert(0, 0) }
+            }
+
+            Point memory pk = Point(result[0], result[1]);
+
+            publicKeys.push(pk);
+            
         }
         
     }
 
-    function packArray(PublicKey[] memory arr) internal pure returns (bytes memory) {
+    function packArray(Point[] memory arr) internal pure returns (bytes memory) {
         bytes memory packed;
         for (uint256 i = 0; i < arr.length; i++) {
             bytes memory temp = abi.encodePacked(arr[i].x, arr[i].y);
@@ -134,64 +162,151 @@ contract DualRing {
     }
 
     // Function to sign a message using a private key
-    function sign(string memory _message, uint256 _privateKeyIndex) public view returns (Signature memory) {
-        require(_privateKeyIndex < privateKeys.length, "DualRing: Invalid private key index");
+    function sign(string memory _message, uint _privateKeyIndex) public returns (Signature memory) {
+        require(_privateKeyIndex < sks.length, "DualRing: Invalid private key index");
         uint256 r = uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, _privateKeyIndex))) % PP;
         uint256[] memory cArray = new uint256[](publicKeys.length);
         
         uint256 sumExceptJ = 0;
-        uint256 tempX = 0;
-        uint256 tempY = 0;
-        (tempX,tempY) =  derivePubKey(r);
+        // uint256 tempX = 0;
+        // uint256 tempY = 0;
+        // (tempX,tempY) =  derivePubKey(r);
+        // Point memory R = multiply(G, r);
+
+
+         uint256[3] memory input;
+            input[0] = GX;
+            input[1] = GY;
+            input[2] = r;
+
+        bool success;
+        uint256[2] memory R;
+
+        assembly {
+                success := call(not(0), 0x07, 0, input, 96, R, 64)
+                switch success case 0 { revert(0, 0) }
+        }
+        
 
         for (uint256 i = 0; i < publicKeys.length; i++) {
             if (i != _privateKeyIndex) {
                 
-                uint256 tempC = uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, i))) % PP;
-                cArray[i] = tempC;
-                sumExceptJ = sumExceptJ+tempC;
-                (uint256 a,uint256 b) = mul(publicKeys[i].x,publicKeys[i].y,tempC);
-                (tempX,tempY) = add(a,b,tempX,tempY);
+                cArray[i] = uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp, i))) % PP;
+         
+                uint256[2] memory temp;
+
+                uint256[3] memory inputM;
+                inputM[0] = publicKeys[i].x;
+                inputM[1] = publicKeys[i].y;
+                inputM[2] = cArray[i];
+
+                assembly {
+                success := call(not(0), 0x07, 0, inputM, 96, temp, 64)
+                switch success case 0 { revert(0, 0) }
+                }
+
+                // Point memory tempP = multiply(publicKeys[i], tempC);
+
+                uint256[4] memory inputA;
+                inputA[0] = publicKeys[i].x;
+                inputA[1] = publicKeys[i].y;
+                inputA[2] = temp[0];
+                inputA[3] = temp[1];
+
+                bool success;
+                // uint256[2] memory result;
+                assembly {
+                    success := call(not(0), 0x06, 0, inputA, 128, R, 64)
+                    switch success case 0 { revert(0, 0) }
+                }
+
+                // R = add(R, tempP);
 
 
             }
         }
         
         bytes32 messageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(bytes(_message))));
-        uint256 c = uint256(keccak256(abi.encodePacked(messageHash,packArray(publicKeys),tempX,tempY)));
+
+        uint256 c = uint256(keccak256(abi.encodePacked(messageHash,packArray(publicKeys),R[0],R[1])));
         cArray[_privateKeyIndex] = c-sumExceptJ%PP;
-        uint256 z = r - (c*privateKeys[_privateKeyIndex].k) %PP;
+        uint256 z = r - (c*sks[_privateKeyIndex]) %PP;
 
         Signature memory signature = Signature({
             c: cArray,
             z: z
         });
+
+        sig = signature;
         return signature;
     }
 
     // Function to verify a signature
 
-    function verify(string memory _message, Signature memory _signature) public view returns (bool) {
-        uint256[] memory cArray = _signature.c;
-        uint256 z = _signature.z;
-        uint256 tempX = 0;
-        uint256 tempY = 0;
+    function verify(string memory _message) public returns (bool) {
+
+        uint256[] memory cArray = sig.c;
+        uint256 z = sig.z;
+        // uint256 tempX = 0;
+        // uint256 tempY = 0;
         uint256 sumExceptJ = 0;
-        (tempX,tempY) =  derivePubKey(z);
+        // (tempX,tempY) =  derivePubKey(z);
+
+        // Point memory R = multiply(G, z);
+        uint256[3] memory input;
+            input[0] = GX;
+            input[1] = GY;
+            input[2] = z;
+
+        bool success;
+        uint256[2] memory R;
+
+        assembly {
+                success := call(not(0), 0x07, 0, input, 96, R, 64)
+                switch success case 0 { revert(0, 0) }
+        }
+
         for (uint256 i = 0; i < publicKeys.length; i++) {
             sumExceptJ = sumExceptJ+cArray[i];
-            (uint256 a,uint256 b) = mul(publicKeys[i].x,publicKeys[i].y,cArray[i]);
-            (tempX,tempY) = add(a,b,tempX,tempY);
+            // (uint256 a,uint256 b) = mul(publicKeys[i].x,publicKeys[i].y,cArray[i]);
+                uint256[2] memory temp;
+
+                uint256[3] memory inputM;
+                inputM[0] = publicKeys[i].x;
+                inputM[1] = publicKeys[i].y;
+                inputM[2] = cArray[i];
+
+                assembly {
+                success := call(not(0), 0x07, 0, inputM, 96, temp, 64)
+                switch success case 0 { revert(0, 0) }
+                }
+            // Point memory tempP = multiply(publicKeys[i],cArray[i]); 
+                uint256[4] memory inputA;
+                inputA[0] = publicKeys[i].x;
+                inputA[1] = publicKeys[i].y;
+                inputA[2] = R[0];
+                inputA[3] = R[1];
+
+                bool success;
+                // uint256[2] memory result;
+                assembly {
+                    success := call(not(0), 0x06, 0, inputA, 128, R, 64)
+                    switch success case 0 { revert(0, 0) }
+                }
+
+
+            // R = add(tempP, R);
 
 
             
         }
 
         bytes32 messageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(bytes(_message))));
-        uint256 c = uint256(keccak256(abi.encodePacked(messageHash, packArray(publicKeys), tempX,tempY)));
+        uint256 c = uint256(keccak256(abi.encodePacked(messageHash, packArray(publicKeys), R[0],R[1])));
 
 
         return c == sumExceptJ%PP;
     }
-}
 
+
+}
