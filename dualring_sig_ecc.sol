@@ -1,4 +1,5 @@
-pragma solidity 0.8.10;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.4.0 <0.9.0;
 
 // import "@openzeppelin/contracts/utils/Arrays.sol";
 // import "@openzeppelin/contracts/utils/Counters.sol";
