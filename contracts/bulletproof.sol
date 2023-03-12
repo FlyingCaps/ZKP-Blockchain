@@ -39,20 +39,15 @@ contract BulletProof {
         }
     }
 
-    function splitEvenOdd(alt_bn128.G1Point[] memory Gs, uint256[] memory poly) public pure 
-    returns (alt_bn128.G1Point[] memory Gs_even, alt_bn128.G1Point[] memory Gs_odd, uint256[] memory poly_even, uint256[] memory poly_odd){
-        uint length = poly.length / 2;
+    /** compute the (L, R) pair */
+    function LRpair(alt_bn128.G1Point[] memory Gs, uint256[] memory poly) public view
+    returns (alt_bn128.G1Point memory L, alt_bn128.G1Point memory R){
+        L = alt_bn128.mul(Gs[0], poly[1]);
+        R = alt_bn128.mul(Gs[1], poly[0]);
 
-        Gs_even = new alt_bn128.G1Point[](length);
-        Gs_odd = new alt_bn128.G1Point[](length);
-        poly_even = new uint256[](length);
-        poly_odd = new uint256[](length);
-
-        for (uint i = 0; i < length; i++){
-            Gs_odd[i] = Gs[2*i+1];
-            Gs_even[i] = Gs[2*i];
-            poly_odd[i] = poly[2*i+1];
-            poly_even[i] = poly[2*i];
+        for (uint i = 1; i < poly.length/2; i++){
+            L = alt_bn128.add(alt_bn128.mul(Gs[2*i], poly[2*i+1]), L);
+            R = alt_bn128.add(alt_bn128.mul(Gs[2*i+1], poly[2*i]), R);
         }
     }
 
@@ -103,11 +98,6 @@ contract BulletProof {
         uint256 a;
         bytes32 r = alt_bn128.serialize(C);
 
-        alt_bn128.G1Point[] memory Gs_even;
-        alt_bn128.G1Point[] memory Gs_odd;
-        uint256[] memory poly_even;
-        uint256[] memory poly_odd;
-
         alt_bn128.G1Point memory L;
         alt_bn128.G1Point memory R;
 
@@ -116,10 +106,8 @@ contract BulletProof {
 
         // log(n) rounds
         for (uint i = 0; i < length; i++){
-            (Gs_even, Gs_odd, poly_even, poly_odd) = splitEvenOdd(Gs, poly);
-
-            L = commit(Gs_even, poly_odd); Ls[i] = L;
-            R = commit(Gs_odd, poly_even); Rs[i] = R;
+            (L, R) = LRpair(Gs, poly);
+            Ls[i] = L; Rs[i] = R;
 
             r = keccak256(abi.encodePacked(r, alt_bn128.serialize(L), alt_bn128.serialize(R)));
             a = alt_bn128.mod(uint256(r));
@@ -155,5 +143,4 @@ contract BulletProof {
         }
         return alt_bn128.eq(alt_bn128.mul(Gs[0], p.final_co), C);
     }
-
 }

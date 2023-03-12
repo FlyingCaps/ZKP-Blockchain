@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.4.0 <0.9.0;
 
-import "./conversion.sol";
-
 library alt_bn128 {
 
     // uint256 public constant q = 21888242871839275222246405745257275088548364400416034343698204186575808495617; // curve order
@@ -185,8 +183,4 @@ library alt_bn128 {
     function serialize(G1Point memory p) public pure returns (bytes32){
       return bytes32(abi.encodePacked(p.X, p.Y));
     }
-
-    // function hash(G1Point memory p) public pure returns (bytes32){
-    //   return keccak256(abi.encodePacked(p.X, p.Y));
-    // }
 }
