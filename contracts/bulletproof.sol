@@ -5,6 +5,7 @@ import "./alt_bn128.sol";
 
 contract BulletProof {
     using alt_bn128 for uint256;
+    using alt_bn128 for alt_bn128.G1Point;
 
     struct Proof {
         alt_bn128.G1Point[] Ls;
@@ -15,10 +16,9 @@ contract BulletProof {
     /** Base points of the elliptic curve */
     function generators(uint count) public view returns (alt_bn128.G1Point[] memory Gs){
         Gs = new alt_bn128.G1Point[](count);
-        for (uint i = 0; i < count; i++){
-            Gs[i] = alt_bn128.uintToCurvePoint(i);
+        for (uint256 i = 0; i < count; i++){
+            Gs[i] = alt_bn128.uintToCurvePoint(i+2);
         }
-        return Gs;
     }
 
     // /** Commitment to polynomial (lower and upper half scheme) */
@@ -66,7 +66,7 @@ contract BulletProof {
 
         for (uint i = 0; i < length; i++){
             Gs_new[i] = alt_bn128.add(alt_bn128.mul(Gs[2*i], a), Gs[2*i+1]);
-            poly_new[i] = alt_bn128.add(poly_new[2*i], alt_bn128.mul(a, poly_new[2*i+1]));
+            poly_new[i] = alt_bn128.add(poly[2*i], alt_bn128.mul(a, poly[2*i+1]));
         }
     }
 
@@ -74,7 +74,7 @@ contract BulletProof {
         ndigits = 0;
         while (n > 1){
             ndigits += 1;
-            n <<= 1;
+            n = n/2;
         }
     }
 
@@ -93,7 +93,6 @@ contract BulletProof {
     returns (Proof memory p) {
         require(poly.length & (poly.length - 1) == 0, "polynomial length should be a power of 2");
         uint length = log2(poly.length);
-
         // Fiat-shamir heuristics as challenge
         uint256 a;
         bytes32 r = alt_bn128.serialize(C);
@@ -112,7 +111,7 @@ contract BulletProof {
             r = keccak256(abi.encodePacked(r, alt_bn128.serialize(L), alt_bn128.serialize(R)));
             a = alt_bn128.mod(uint256(r));
 
-            // Generate half-size poly and Gs
+            // // Generate half-size poly and Gs
             (Gs, poly) = nextRound(Gs, poly, a);
         }
 
@@ -134,7 +133,7 @@ contract BulletProof {
             C = alt_bn128.add(
                     alt_bn128.add(
                         alt_bn128.mul(C, a), 
-                        alt_bn128.mul(p.Ls[i], a*a)
+                        alt_bn128.mul(p.Ls[i], alt_bn128.mul(a, a))
                     ), 
                     p.Rs[i]
                 );

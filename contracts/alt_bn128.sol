@@ -3,9 +3,9 @@ pragma solidity >=0.4.0 <0.9.0;
 
 library alt_bn128 {
 
-    // uint256 public constant q = 21888242871839275222246405745257275088548364400416034343698204186575808495617; // curve order
-    // uint256 public constant n = 21888242871839275222246405745257275088696311157297823662689037894645226208583; // prime field order
-    // uint256 public constant b = 3;
+    uint256 public constant q = 21888242871839275222246405745257275088548364400416034343698204186575808495617; // curve order
+    uint256 public constant n = 21888242871839275222246405745257275088696311157297823662689037894645226208583; // prime field order
+    uint256 public constant b = 3;
 
     // uint256 constant public ECSignMask = 0x8000000000000000000000000000000000000000000000000000000000000000;
     // uint256 constant public BigModExponent = (n + 1)/4;
@@ -74,7 +74,6 @@ library alt_bn128 {
     function neg(G1Point memory p) internal pure returns (G1Point memory) {
         if (p.X == 0 && p.Y == 0)
             return G1Point(0, 0);
-        uint256 n = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
         return G1Point(p.X, n - p.Y);
         // return G1Point(p.X, n - (p.Y % n));
     }
@@ -84,14 +83,13 @@ library alt_bn128 {
     }
 
     function add(uint256 x, uint256 y) internal pure returns (uint256) {
-        uint256 q = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
         return addmod(x, y, q);
     }
 
     function mul(uint256 x, uint256 y) internal pure returns (uint256) {
-        uint256 q = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
         return mulmod(x, y, q);
     }
+
 
     // function inv2(uint256 x) internal view returns (uint256) {
     //     uint256 q = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
@@ -99,38 +97,35 @@ library alt_bn128 {
     // }
 
     function inv(uint256 x) internal pure returns (uint) {
-        uint256 p = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
         uint256 a = x;
         if (a == 0)
             return 0;
-        if (a > p)
-            a = a % p;
+        if (a > q)
+            a = a % q;
         int t1;
         int t2 = 1;
-        uint r1 = p;
+        uint r1 = q;
         uint r2 = a;
-        uint q;
+        uint p;
         while (r2 != 0) {
-            q = r1 / r2;
-            (t1, t2, r1, r2) = (t2, t1 - int(q) * t2, r2, r1 - q * r2);
+            p = r1 / r2;
+            (t1, t2, r1, r2) = (t2, t1 - int(p) * t2, r2, r1 - p * r2);
         }
         if (t1 < 0)
-            return (p - uint(-t1));
+            return (q - uint(-t1));
         return uint(t1);
     }
 
     function mod(uint256 x) internal pure returns (uint256) {
-        uint256 q = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
         return x % q;
     }
 
     function sub(uint256 x, uint256 y) internal pure returns (uint256) {
-        uint256 q = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
         return x >= y ? x - y : q - y + x;
     }
 
     function neg(uint256 x) internal pure returns (uint256) {
-        return 21888242871839275222246405745257275088548364400416034343698204186575808495617 - x;
+        return q - x;
     }
 
     function modExp(uint256 base, uint256 exponent, uint256 modulus) internal view returns (uint256) {
@@ -151,7 +146,6 @@ library alt_bn128 {
     }
 
     function modExp(uint256 base, uint256 exponent) internal view returns (uint256) {
-        uint256 q = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
         return modExp(base, exponent, q);
     }
 
@@ -161,13 +155,11 @@ library alt_bn128 {
     }
 
     function uintToCurvePoint(uint256 x) internal view returns(G1Point memory p) {
-        uint256 n = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
         uint256 seed = x % n;
         uint256 y;
         seed -= 1;
         bool onCurve = false;
         uint256 y2;
-        uint256 b = uint256(3);
         while(!onCurve) {
             seed += 1;
             y2 = mulmod(seed, seed, n);

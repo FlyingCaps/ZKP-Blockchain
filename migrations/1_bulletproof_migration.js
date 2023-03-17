@@ -1,5 +1,5 @@
-var alt_bn128 = artifacts.require("alt_bn128");
-var BulletProof = artifacts.require("BulletProof");
+const alt_bn128 = artifacts.require("alt_bn128");
+const BulletProof = artifacts.require("BulletProof");
 
 module.exports = function(deployer) {
   // deployment steps
