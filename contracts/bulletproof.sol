@@ -14,7 +14,7 @@ contract BulletProof {
     }
     
     /** Base points of the elliptic curve */
-    function generators(uint count) public view returns (alt_bn128.G1Point[] memory Gs){
+    function generate(uint count) public view returns (alt_bn128.G1Point[] memory Gs){
         Gs = new alt_bn128.G1Point[](count);
         for (uint256 i = 0; i < count; i++){
             Gs[i] = alt_bn128.uintToCurvePoint(i+2);
@@ -40,7 +40,7 @@ contract BulletProof {
     }
 
     /** compute the (L, R) pair */
-    function LRpair(alt_bn128.G1Point[] memory Gs, uint256[] memory poly) public view
+    function LRpair(alt_bn128.G1Point[] memory Gs, uint256[] memory poly) internal view
     returns (alt_bn128.G1Point memory L, alt_bn128.G1Point memory R){
         L = alt_bn128.mul(Gs[0], poly[1]);
         R = alt_bn128.mul(Gs[1], poly[0]);
@@ -57,7 +57,7 @@ contract BulletProof {
      * => intermediate commitment 
      * C' = sum c'_i G'_i = aC + a^2L + R
     */
-    function nextRound(alt_bn128.G1Point[] memory Gs, uint256[] memory poly , uint256 a) public view
+    function nextRound(alt_bn128.G1Point[] memory Gs, uint256[] memory poly , uint256 a) internal view
     returns (alt_bn128.G1Point[] memory Gs_new, uint256[] memory poly_new){
         uint length = poly.length / 2;
 
@@ -70,7 +70,7 @@ contract BulletProof {
         }
     }
 
-    function log2(uint n) public pure returns (uint ndigits){
+    function log2(uint n) internal pure returns (uint ndigits){
         ndigits = 0;
         while (n > 1){
             ndigits += 1;
@@ -78,7 +78,7 @@ contract BulletProof {
         }
     }
 
-    function nextRound(alt_bn128.G1Point[] memory Gs, uint256 a) public view
+    function nextRound(alt_bn128.G1Point[] memory Gs, uint256 a) internal view
     returns (alt_bn128.G1Point[] memory Gs_new){
         uint length = Gs.length / 2;
 

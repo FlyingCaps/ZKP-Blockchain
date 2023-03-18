@@ -149,11 +149,6 @@ library alt_bn128 {
         return modExp(base, exponent, q);
     }
 
-    function hashToCurve(bytes memory input) internal view returns (G1Point memory p) {
-        uint256 seed = uint256(keccak256(input));
-        return uintToCurvePoint(seed);
-    }
-
     function uintToCurvePoint(uint256 x) internal view returns(G1Point memory p) {
         uint256 seed = x % n;
         uint256 y;
