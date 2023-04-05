@@ -3,6 +3,7 @@ pragma solidity >=0.4.0 <0.9.0;
 
 import "./alt_bn128.sol";
 
+// proof using recursion
 contract NISA2{
 	using alt_bn128 for uint256;
 	using alt_bn128 for alt_bn128.G1Point;
@@ -60,12 +61,6 @@ contract NISA2{
 		}
 	}
 
-	// function test(uint256[] memory a) public view returns (Proof memory) {
-	// 	Param memory param = generateParam(a);
-	// 	Proof memory p = prove(param, a);
-	// 	return p;
-	// }
-
 	function test(uint256[] memory a) public returns (bool) {
 		Param memory param = generateParam(a);
 		Proof memory p = prove(param, a);
@@ -81,9 +76,8 @@ contract NISA2{
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 
 		uint length = log2(a.length);
-		Var memory v;
-		v.Ls = new alt_bn128.G1Point[](length);
-		v.Rs = new alt_bn128.G1Point[](length);
+		alt_bn128.G1Point[] memory Ls = new alt_bn128.G1Point[](length);
+		alt_bn128.G1Point[] memory Rs = new alt_bn128.G1Point[](length);
 
 		uint256 H_z = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(param.P), alt_bn128.serialize(u), param.c)));
 		
@@ -93,44 +87,48 @@ contract NISA2{
 		for (uint i = 0; i < b.length; i++){
 			b[i] = 1;
 		}
-		return loop(param.Gs, u_prime, a, b, v, 0);
+		return loop(Board(param.Gs, u_prime, a, b, Ls, Rs, 0));
 	}
 
-	struct board {
+	struct Board {
 		alt_bn128.G1Point[] Gs;
     alt_bn128.G1Point u_prime;
-		uint256[] a_new;
-		uint256[] b_new;
+		uint256[] a;
+		uint256[] b;
     alt_bn128.G1Point[] Ls;
 		alt_bn128.G1Point[] Rs;
     uint idx;
 	}
 
-	function loop(alt_bn128.G1Point[] memory Gs, alt_bn128.G1Point memory u_prime, uint256[] memory a, uint256[] memory b, Var memory v, uint idx) public returns (Proof memory){
-		if (a.length == 1) {
-			return Proof(v.Ls, v.Rs, a[0], b[0]);
+	function loop(Board memory board) public returns (Proof memory){
+		if (board.a.length == 1) {
+			return Proof(board.Ls, board.Rs, board.a[0], board.b[0]);
 		}
 		alt_bn128.G1Point memory L;
 		alt_bn128.G1Point memory R;
-		(L, R) = LR(Gs, a, b, u_prime);
-    v.Ls[idx] = L;
-    v.Rs[idx] = R;
+		(L, R) = LR(board.Gs, board.a, board.b, board.u_prime);
+    board.Ls[board.idx] = L;
+    board.Rs[board.idx] = R;
 
 		uint256 x = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(L), alt_bn128.serialize(R))));
 		uint256 x_inv = alt_bn128.inv(x);
 
-		uint n = a.length / 2;
-		board memory bd;
-		bd.Gs_new = new alt_bn128.G1Point[](n);
-		bd.a_new = new uint256[](n);
-		bd.b_new = new uint256[](n);
+		uint n = board.a.length / 2;
+		
+		alt_bn128.G1Point[] memory Gs_new = new alt_bn128.G1Point[](n);
+		uint256[] memory a_new = new uint256[](n);
+		uint256[] memory b_new = new uint256[](n);
 
 		for (uint i = 0; i < n; i++){
-			bd.Gs_new[i] = alt_bn128.add(alt_bn128.mul(Gs[i], x_inv), alt_bn128.mul(Gs[n+i], x));
-			bd.a_new[i] = alt_bn128.add(alt_bn128.mul(x, a[i]), alt_bn128.mul(x_inv, a[n+i]));
-			bd.b_new[i] = alt_bn128.add(alt_bn128.mul(x_inv, b[i]), alt_bn128.mul(x, b[n+i]));
+			Gs_new[i] = alt_bn128.add(alt_bn128.mul(board.Gs[i], x_inv), alt_bn128.mul(board.Gs[n+i], x));
+		  a_new[i] = alt_bn128.add(alt_bn128.mul(x, board.a[i]), alt_bn128.mul(x_inv, board.a[n+i]));
+			b_new[i] = alt_bn128.add(alt_bn128.mul(x_inv, board.b[i]), alt_bn128.mul(x, board.b[n+i]));
 		}
-		return loop(bd.Gs_new, u_prime, bd.a_new, bd.b_new, v, idx+1);
+    board.Gs = Gs_new;
+    board.a = a_new;
+    board.b = b_new;
+    board.idx += 1;
+		return loop(board);
 	}
 
 	function LR(alt_bn128.G1Point[] memory Gs, uint256[] memory a, uint256[] memory b, alt_bn128.G1Point memory u_prime) internal view 
