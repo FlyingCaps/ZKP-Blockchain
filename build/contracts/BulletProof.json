@@ -30,7 +30,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -78,7 +79,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -172,7 +174,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -266,7 +269,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     }
   ],
   "metadata": "{\"compiler\":{\"version\":\"0.8.19+commit.7dd6d404\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point[]\",\"name\":\"Gs\",\"type\":\"tuple[]\"},{\"internalType\":\"uint256[]\",\"name\":\"poly\",\"type\":\"uint256[]\"}],\"name\":\"commit\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point\",\"name\":\"C\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"count\",\"type\":\"uint256\"}],\"name\":\"generate\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point[]\",\"name\":\"Gs\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point[]\",\"name\":\"Gs\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point\",\"name\":\"C\",\"type\":\"tuple\"},{\"internalType\":\"uint256[]\",\"name\":\"poly\",\"type\":\"uint256[]\"}],\"name\":\"prove\",\"outputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point[]\",\"name\":\"Ls\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point[]\",\"name\":\"Rs\",\"type\":\"tuple[]\"},{\"internalType\":\"uint256\",\"name\":\"final_co\",\"type\":\"uint256\"}],\"internalType\":\"struct BulletProof.Proof\",\"name\":\"p\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point[]\",\"name\":\"Gs\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point\",\"name\":\"C\",\"type\":\"tuple\"},{\"components\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point[]\",\"name\":\"Ls\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"X\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"Y\",\"type\":\"uint256\"}],\"internalType\":\"struct alt_bn128.G1Point[]\",\"name\":\"Rs\",\"type\":\"tuple[]\"},{\"internalType\":\"uint256\",\"name\":\"final_co\",\"type\":\"uint256\"}],\"internalType\":\"struct BulletProof.Proof\",\"name\":\"p\",\"type\":\"tuple\"}],\"name\":\"verify\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"commit((uint256,uint256)[],uint256[])\":{\"notice\":\"Commitment to polynomial (even and odd scheme) \"},\"generate(uint256)\":{\"notice\":\"Base points of the elliptic curve \"},\"prove((uint256,uint256)[],(uint256,uint256),uint256[])\":{\"notice\":\"Proof of the polynomial \"},\"verify((uint256,uint256)[],(uint256,uint256),((uint256,uint256)[],(uint256,uint256)[],uint256))\":{\"notice\":\"Base case check: final point * final coefficient ?= final commitment \"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/bulletproof.sol\":\"BulletProof\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/contracts/alt_bn128.sol\":{\"keccak256\":\"0x0a061492089a6b5a4fbba413b39ebbd7bf1f1944e2177e314c429b86b02c1369\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://4bc4972e5d5dc2019f9f5302224eedb3e3d15923aa256a8d4395fcc8b87a720d\",\"dweb:/ipfs/QmZ44c9VT4Ly2m6MdC6e7Nk9CrZiMsUzfMAAsFQhg6CXgY\"]},\"project:/contracts/bulletproof.sol\":{\"keccak256\":\"0x5c6f56af55a03458ea996b343bb7738b678d915e108bd7dec7c7f7a307bd6e60\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://aa6618209e304a0dee2995529a312aad2c742e5ca0f0bee16d31da6c5c665647\",\"dweb:/ipfs/QmceHRDRuPbKQUQx7VNCE1z1fxchPfxxwY8uCyE4FvZ4C5\"]}},\"version\":1}",
@@ -20336,10 +20340,10 @@
     "5777": {
       "events": {},
       "links": {
-        "alt_bn128": "0xAa0E8e6eEbEC7BfCe9e223576E6a3D0e27F5ECc2"
+        "alt_bn128": "0xA8452312d376c77424dE79fB2A57057E680853B5"
       },
-      "address": "0xBA6084D15cF918a025fa4f83595EA64A87a5287B",
-      "transactionHash": "0x3e52aa98c27c6a5d781b394536e1559a30d928d7d63262f3e21702a23381370d"
+      "address": "0x1cd4FcD71F1007C1A5f5c31f459d29b2a8E1D17C",
+      "transactionHash": "0x857d89583b618047cbc9107cfb3fb71a4bda4b71f9569168c9f40d5785ca930c"
     },
     "1678631915614": {
       "events": {},
@@ -20359,7 +20363,8 @@
     }
   },
   "schemaVersion": "3.4.13",
-  "updatedAt": "2023-03-18T17:42:51.375Z",
+  "updatedAt": "2023-04-05T13:48:55.651Z",
+  "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
     "methods": {},

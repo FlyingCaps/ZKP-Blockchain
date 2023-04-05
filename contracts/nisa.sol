@@ -4,15 +4,15 @@ pragma solidity >=0.4.0 <0.9.0;
 import "./alt_bn128.sol";
 
 contract NISA{
-    using alt_bn128 for uint256;
+	using alt_bn128 for uint256;
 	using alt_bn128 for alt_bn128.G1Point;
 
-    struct Proof {
-      alt_bn128.G1Point[] Ls;
-      alt_bn128.G1Point[] Rs;
-      uint256 a;
-      uint256 b;
-    }
+	struct Proof {
+		alt_bn128.G1Point[] Ls;
+		alt_bn128.G1Point[] Rs;
+		uint256 a;
+		uint256 b;
+	}
 
 	alt_bn128.G1Point u; // random generator
 	struct Param {
@@ -30,27 +30,56 @@ contract NISA{
 		u = alt_bn128.uintToCurvePoint(seed);
 	}
 
-  	/** generate public keys or curve points */
-  	function generate(uint count) public view returns (alt_bn128.G1Point[] memory Gs){
-        Gs = new alt_bn128.G1Point[](count);
-        for (uint256 i = 0; i < count; i++){
-            Gs[i] = alt_bn128.uintToCurvePoint(i+2);
-        }
-    }
+	/** generate public keys or curve points */
+	// function generate(uint count) internal view returns (alt_bn128.G1Point[] memory Gs){
+	// 	Gs = new alt_bn128.G1Point[](count);
+	// 	for (uint256 i = 0; i < count; i++){
+	// 		Gs[i] = alt_bn128.uintToCurvePoint(i+2);
+	// 	}
+	// }
 
-	function log2(uint n) internal pure returns (uint ndigits){
-        ndigits = 0;
-        while (n > 1){
-            ndigits += 1;
-            n = n/2;
-        }
-    }
+	function generateParam(uint256[] memory a) public view returns (Param memory param){
+		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
+		param.Gs = new alt_bn128.G1Point[](a.length);
+		for (uint256 i = 0; i < a.length; i++){
+			param.Gs[i] = alt_bn128.uintToCurvePoint(i+2);
+		}
+		param.c = a[0];
+		param.P = alt_bn128.mul(param.Gs[0], a[0]);
+		for (uint i = 1; i < a.length; i++){
+			param.c = alt_bn128.add(param.c, a[i]);
+			param.P = alt_bn128.add(param.P, alt_bn128.mul(param.Gs[i], a[i]));
+		}
+	}
+
+	function log2(uint n) public pure returns (uint ndigits){
+		ndigits = 0;
+		while (n > 1){
+			ndigits += 1;
+			n = n/2;
+		}
+	}
+
+	function test(uint256[] memory a) public view returns (Proof memory) {
+		Param memory param = generateParam(a);
+		Param memory sec = generateParam(a); // second copy
+		Proof memory p = prove(param, a);
+		// return verify(sec, p);
+		return p;
+	}
+
+		function test2(uint256[] memory a) public view returns (bool) {
+		Param memory param = generateParam(a);
+		// Param memory sec = generateParam(a); // second copy
+		Proof memory p = prove(param, a);
+		return verify(param, p);
+	}
 
 	/** Gs : public keys
 		P : prod_i (g_i ^ a_i)
 		c : sum_i a_i
 	 */
-	function prove(Param memory param, uint256[] memory a) public view
+	function prove(Param memory param, uint256[] memory a) view public
 	returns (Proof memory p){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 
@@ -64,11 +93,11 @@ contract NISA{
 		alt_bn128.G1Point memory u_prime = alt_bn128.mul(u, H_z);
 
 		uint256[] memory b = new uint256[](a.length);
+		alt_bn128.G1Point[] memory Gs = new alt_bn128.G1Point[](a.length);
 		for (uint i = 0; i < b.length; i++){
 			b[i] = 1;
+			Gs[i] = param.Gs[i];
 		}
-
-		uint n = a.length;
 		uint256 x;
 
 		alt_bn128.G1Point memory L;
@@ -76,27 +105,25 @@ contract NISA{
 
 		// O(logn) loop
 		for (uint idx = 0; idx < length; idx++){
-			n = n / 2;
 
 			// L && R
-			(L, R) = LRpair(param.Gs, a, b, n, u_prime);
+			(L, R) = LR(Gs, a, b, u_prime);
 			v.Ls[idx] = L; v.Rs[idx] = R;
 			
 			x = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(L), alt_bn128.serialize(R))));
 
 			// half size
-			(param.Gs, a, b) = nextRound(param.Gs, a, b, x);
+			(Gs, a, b) = nextRound(Gs, a, b, x);
 		}
 
 		p = Proof(v.Ls, v.Rs, a[0], b[0]);
 	}
 
-	function LRpair(alt_bn128.G1Point[] memory Gs, uint256[] memory a, uint256[] memory b, uint n, alt_bn128.G1Point memory u_prime) internal view 
+	function LR(alt_bn128.G1Point[] memory Gs, uint256[] memory a, uint256[] memory b, alt_bn128.G1Point memory u_prime) internal view 
 	returns (alt_bn128.G1Point memory L, alt_bn128.G1Point memory R) {
-		uint256 cL;
-		uint256 cR;
-		cL = alt_bn128.mul(a[0], b[n]);
-		cR = alt_bn128.mul(a[n], b[0]);
+		uint n = a.length / 2;
+		uint256 cL = alt_bn128.mul(a[0], b[n]);
+		uint256 cR = alt_bn128.mul(a[n], b[0]);
 		for (uint i = 1; i < n; i++){
 			cL = alt_bn128.add(cL, alt_bn128.mul(a[i], b[n+i]));
 			cR = alt_bn128.add(cR, alt_bn128.mul(a[n+i], b[i]));
@@ -111,28 +138,30 @@ contract NISA{
 		}
 	}
 
-	function nextRound(alt_bn128.G1Point[] memory Gs, uint256[] memory a, uint256[] memory b, uint256 x) internal view
-    returns (alt_bn128.G1Point[] memory Gs_new, uint256[] memory a_new, uint256[] memory b_new){
-        uint n = a.length / 2;
+	function nextRound(alt_bn128.G1Point[] memory Gs, uint256[] memory a, uint256[] memory b, uint256 x) internal view returns (alt_bn128.G1Point[] memory Gs_new, uint256[] memory a_new, uint256[] memory b_new)
+	{
+		uint n = a.length / 2;
 
 		uint256 x_inv = alt_bn128.inv(x);
 
-        Gs_new = new alt_bn128.G1Point[](n);
-        a_new = new uint256[](n);
+		Gs_new = new alt_bn128.G1Point[](n);
+		a_new = new uint256[](n);
 		b_new = new uint256[](n);
 
-        for (uint i = 0; i < n; i++){
-            Gs_new[i] = alt_bn128.add(alt_bn128.mul(Gs[i], x_inv), alt_bn128.mul(Gs[n+i], x));
-            a_new[i] = alt_bn128.add(alt_bn128.mul(x, a[i]), alt_bn128.mul(x_inv, a[n+i]));
+		for (uint i = 0; i < n; i++){
+			Gs_new[i] = alt_bn128.add(alt_bn128.mul(Gs[i], x_inv), alt_bn128.mul(Gs[n+i], x));
+			a_new[i] = alt_bn128.add(alt_bn128.mul(x, a[i]), alt_bn128.mul(x_inv, a[n+i]));
 			b_new[i] = alt_bn128.add(alt_bn128.mul(x_inv, b[i]), alt_bn128.mul(x, b[n+i]));
-        }
-    }
+		}
+	}
 
 	function verify(Param memory param, Proof memory p) public view 
 	returns (bool){
 		uint256 H_z = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(param.P), alt_bn128.serialize(u), param.c)));
+
+		alt_bn128.G1Point memory u_prime = alt_bn128.mul(u, H_z);
 		
-		alt_bn128.G1Point memory P_prime = alt_bn128.add(param.P, alt_bn128.mul(alt_bn128.mul(u, H_z), param.c));
+		alt_bn128.G1Point memory P_prime = alt_bn128.add(param.P, alt_bn128.mul(u_prime, param.c));
 
 		uint length = log2(param.Gs.length);
 
