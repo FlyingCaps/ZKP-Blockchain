@@ -3,11 +3,13 @@ pragma solidity >=0.4.0 <0.9.0;
 
 import "./alt_bn128.sol";
 
+// proof using iteration
 contract NISA{
 	using alt_bn128 for uint256;
 	using alt_bn128 for alt_bn128.G1Point;
 
 	alt_bn128.G1Point u; // random generator
+
 	struct Param {
 		alt_bn128.G1Point[] Gs; 
 		alt_bn128.G1Point P; 
@@ -33,6 +35,11 @@ contract NISA{
 		return verify(param, p);
 	}
 
+	/** 
+		Gs : public keys
+		P : prod_i (g_i ^ a_i)
+		c : sum_i a_i
+	 */
 	function generateParam(uint256[] memory a) internal view returns (Param memory param){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 		param.Gs = new alt_bn128.G1Point[](a.length);
@@ -47,10 +54,6 @@ contract NISA{
 		}
 	}
 
-	/** Gs : public keys
-		P : prod_i (g_i ^ a_i)
-		c : sum_i a_i
-	 */
 	function prove(Param memory param, uint256[] memory a) public view
 	returns (Proof memory p){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");

@@ -8,22 +8,30 @@ contract NISA2{
 	using alt_bn128 for uint256;
 	using alt_bn128 for alt_bn128.G1Point;
 
-	struct Proof {
+	alt_bn128.G1Point u; // random generator
+
+	struct Param {
+		alt_bn128.G1Point[] Gs; 
+		alt_bn128.G1Point P; 
+		uint256 c;
+	}
+
+  struct Proof {
 		alt_bn128.G1Point[] Ls;
 		alt_bn128.G1Point[] Rs;
 		uint256 a;
 		uint256 b;
 	}
 
-	alt_bn128.G1Point u; // random generator
-	struct Param {
-		alt_bn128.G1Point[] Gs; 
-		alt_bn128.G1Point P; 
-		uint256 c;
-	}
-	struct Var {
-		alt_bn128.G1Point[] Ls;
+  // for recursion
+  struct Board {
+		alt_bn128.G1Point[] Gs;
+    alt_bn128.G1Point u_prime;
+		uint256[] a;
+		uint256[] b;
+    alt_bn128.G1Point[] Ls;
 		alt_bn128.G1Point[] Rs;
+    uint idx;
 	}
 
 	constructor() {
@@ -31,22 +39,19 @@ contract NISA2{
 		u = alt_bn128.uintToCurvePoint(seed);
 	}
 
-	/** generate public keys or curve points */
-	// function generate(uint count) internal view returns (alt_bn128.G1Point[] memory Gs){
-	// 	Gs = new alt_bn128.G1Point[](count);
-	// 	for (uint256 i = 0; i < count; i++){
-	// 		Gs[i] = alt_bn128.uintToCurvePoint(i+2);
-	// 	}
-	// }
-
-  // test implementation correctness
+  /** test correctness */
   function test(uint256[] memory a) public returns (bool) {
 		Param memory param = generateParam(a);
 		Proof memory p = prove(param, a);
 		return verify(param, p);
 	}
 
-	function generateParam(uint256[] memory a) public view returns (Param memory param){
+  /** 
+    Gs : public keys
+		P : prod_i (g_i ^ a_i)
+		c : sum_i a_i
+	 */
+	function generateParam(uint256[] memory a) internal view returns (Param memory param){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 		param.Gs = new alt_bn128.G1Point[](a.length);
 		for (uint256 i = 0; i < a.length; i++){
@@ -60,18 +65,6 @@ contract NISA2{
 		}
 	}
 
-	function log2(uint n) internal pure returns (uint ndigits){
-		ndigits = 0;
-		while (n > 1){
-			ndigits += 1;
-			n = n/2;
-		}
-	}
-
-	/** Gs : public keys
-		P : prod_i (g_i ^ a_i)
-		c : sum_i a_i
-	 */
 	function prove(Param memory param, uint256[] memory a) public
 	returns (Proof memory){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
@@ -89,16 +82,6 @@ contract NISA2{
 			b[i] = 1;
 		}
 		return loop(Board(param.Gs, u_prime, a, b, Ls, Rs, 0));
-	}
-
-	struct Board {
-		alt_bn128.G1Point[] Gs;
-    alt_bn128.G1Point u_prime;
-		uint256[] a;
-		uint256[] b;
-    alt_bn128.G1Point[] Ls;
-		alt_bn128.G1Point[] Rs;
-    uint idx;
 	}
 
 	function loop(Board memory board) public returns (Proof memory){
@@ -172,9 +155,9 @@ contract NISA2{
 			ys[i] = 1;
 			for (uint j = 0; j < length; j++){
 				if (check_bit(i, j)){
-					ys[i] = alt_bn128.mul(ys[i], xs[length - j - 1]);
+					ys[i] = alt_bn128.mul(ys[i], xs[length-j-1]);
 				} else {
-					ys[i] = alt_bn128.mul(ys[i], xs_inv[length - j - 1]);
+					ys[i] = alt_bn128.mul(ys[i], xs_inv[length-j-1]);
 				}
 			}
 		}
@@ -201,6 +184,14 @@ contract NISA2{
 		right_point = alt_bn128.mul(right_point, p.a);
 
 		return alt_bn128.eq(left_point, right_point);
+	}
+
+  function log2(uint n) internal pure returns (uint ndigits){
+		ndigits = 0;
+		while (n > 1){
+			ndigits += 1;
+			n = n/2;
+		}
 	}
 
 	function check_bit(uint i, uint j) internal pure returns (bool){
