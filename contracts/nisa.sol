@@ -139,27 +139,35 @@ contract NISA{
 
 		uint256[] memory xs = new uint256[](length);
 		uint256[] memory xs_inv = new uint256[](length);
-		uint256[] memory ys = new uint256[](param.Gs.length);
+		// uint256[] memory ys = new uint256[](param.Gs.length);
+		uint256 y;
+		// verify
+		alt_bn128.G1Point memory left_point;
+		alt_bn128.G1Point memory right_point;
 
 		for (uint i = 0; i < length; i++){
 			xs[i] = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(p.Ls[i]), alt_bn128.serialize(p.Rs[i]))));
 			xs_inv[i] = alt_bn128.inv(xs[i]);
 		}
+		y = 1;
+		for (uint j = 0; j < length; j++){
+			y = alt_bn128.mul(y, xs_inv[j]);
+		}
+		right_point = alt_bn128.mul(param.Gs[0], y);
 
-		for (uint i = 0; i < param.Gs.length; i++){
-			ys[i] = 1;
+		for (uint i = 1; i < param.Gs.length; i++){
+			y = 1;
 			for (uint j = 0; j < length; j++){
 				if (check_bit(i, j)){
-					ys[i] = alt_bn128.mul(ys[i], xs[length-j-1]);
+					y = alt_bn128.mul(y, xs[length-j-1]);
 				} else {
-					ys[i] = alt_bn128.mul(ys[i], xs_inv[length-j-1]);
+					y = alt_bn128.mul(y, xs_inv[length-j-1]);
 				}
 			}
+			right_point = alt_bn128.add(right_point, alt_bn128.mul(param.Gs[i], y));
 		}
-
-		// verify
-		alt_bn128.G1Point memory left_point;
-		alt_bn128.G1Point memory right_point;
+		right_point = alt_bn128.add(right_point, alt_bn128.mul(alt_bn128.mul(u, H_z), p.b));
+		right_point = alt_bn128.mul(right_point, p.a);
 
 		left_point = P_prime;
 		for (uint i = 0; i < length; i++){
@@ -170,13 +178,6 @@ contract NISA{
 							alt_bn128.mul(p.Rs[i], alt_bn128.mul(xs_inv[i], xs_inv[i]))
 						);
 		}
-
-		right_point = alt_bn128.mul(param.Gs[0], ys[0]);
-		for (uint i = 1; i < param.Gs.length; i++){
-			right_point = alt_bn128.add(right_point, alt_bn128.mul(param.Gs[i], ys[i]));
-		}
-		right_point = alt_bn128.add(right_point, alt_bn128.mul(alt_bn128.mul(u, H_z), p.b));
-		right_point = alt_bn128.mul(right_point, p.a);
 
 		return alt_bn128.eq(left_point, right_point);
 	}
