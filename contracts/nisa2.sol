@@ -39,6 +39,13 @@ contract NISA2{
 	// 	}
 	// }
 
+  // test implementation correctness
+  function test(uint256[] memory a) public returns (bool) {
+		Param memory param = generateParam(a);
+		Proof memory p = prove(param, a);
+		return verify(param, p);
+	}
+
 	function generateParam(uint256[] memory a) public view returns (Param memory param){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 		param.Gs = new alt_bn128.G1Point[](a.length);
@@ -53,18 +60,12 @@ contract NISA2{
 		}
 	}
 
-	function log2(uint n) public pure returns (uint ndigits){
+	function log2(uint n) internal pure returns (uint ndigits){
 		ndigits = 0;
 		while (n > 1){
 			ndigits += 1;
 			n = n/2;
 		}
-	}
-
-	function test(uint256[] memory a) public returns (bool) {
-		Param memory param = generateParam(a);
-		Proof memory p = prove(param, a);
-		return verify(param, p);
 	}
 
 	/** Gs : public keys
@@ -150,30 +151,11 @@ contract NISA2{
 		}
 	}
 
-	function nextRound(alt_bn128.G1Point[] memory Gs, uint256[] memory a, uint256[] memory b, uint256 x) internal view returns (alt_bn128.G1Point[] memory Gs_new, uint256[] memory a_new, uint256[] memory b_new)
-	{
-		uint n = a.length / 2;
-
-		uint256 x_inv = alt_bn128.inv(x);
-
-		Gs_new = new alt_bn128.G1Point[](n);
-		a_new = new uint256[](n);
-		b_new = new uint256[](n);
-
-		for (uint i = 0; i < n; i++){
-			Gs_new[i] = alt_bn128.add(alt_bn128.mul(Gs[i], x_inv), alt_bn128.mul(Gs[n+i], x));
-			a_new[i] = alt_bn128.add(alt_bn128.mul(x, a[i]), alt_bn128.mul(x_inv, a[n+i]));
-			b_new[i] = alt_bn128.add(alt_bn128.mul(x_inv, b[i]), alt_bn128.mul(x, b[n+i]));
-		}
-	}
-
 	function verify(Param memory param, Proof memory p) public view 
 	returns (bool){
 		uint256 H_z = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(param.P), alt_bn128.serialize(u), param.c)));
 
-		alt_bn128.G1Point memory u_prime = alt_bn128.mul(u, H_z);
-		
-		alt_bn128.G1Point memory P_prime = alt_bn128.add(param.P, alt_bn128.mul(u_prime, param.c));
+		alt_bn128.G1Point memory P_prime = alt_bn128.add(param.P, alt_bn128.mul(u, alt_bn128.mul(param.c, H_z)));
 
 		uint length = log2(param.Gs.length);
 
@@ -190,9 +172,9 @@ contract NISA2{
 			ys[i] = 1;
 			for (uint j = 0; j < length; j++){
 				if (check_bit(i, j)){
-					ys[i] = alt_bn128.mul(ys[i], xs[j]);
+					ys[i] = alt_bn128.mul(ys[i], xs[length - j - 1]);
 				} else {
-					ys[i] = alt_bn128.mul(ys[i], xs_inv[j]);
+					ys[i] = alt_bn128.mul(ys[i], xs_inv[length - j - 1]);
 				}
 			}
 		}

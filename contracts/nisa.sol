@@ -7,6 +7,13 @@ contract NISA{
 	using alt_bn128 for uint256;
 	using alt_bn128 for alt_bn128.G1Point;
 
+	alt_bn128.G1Point u; // random generator
+	struct Param {
+		alt_bn128.G1Point[] Gs; 
+		alt_bn128.G1Point P; 
+		uint256 c;
+	}
+
 	struct Proof {
 		alt_bn128.G1Point[] Ls;
 		alt_bn128.G1Point[] Rs;
@@ -14,31 +21,19 @@ contract NISA{
 		uint256 b;
 	}
 
-	alt_bn128.G1Point u; // random generator
-	struct Param {
-		alt_bn128.G1Point[] Gs; 
-		alt_bn128.G1Point P; 
-		uint256 c;
-	}
-	struct Var {
-		alt_bn128.G1Point[] Ls;
-		alt_bn128.G1Point[] Rs;
-	}
-
 	constructor() {
 		uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, blockhash(block.number - 1))));
 		u = alt_bn128.uintToCurvePoint(seed);
 	}
 
-	/** generate public keys or curve points */
-	// function generate(uint count) internal view returns (alt_bn128.G1Point[] memory Gs){
-	// 	Gs = new alt_bn128.G1Point[](count);
-	// 	for (uint256 i = 0; i < count; i++){
-	// 		Gs[i] = alt_bn128.uintToCurvePoint(i+2);
-	// 	}
-	// }
+	/** test correctness */
+	function test(uint256[] memory a) public view returns (bool) {
+		Param memory param = generateParam(a);
+		Proof memory p = prove(param, a);
+		return verify(param, p);
+	}
 
-	function generateParam(uint256[] memory a) public view returns (Param memory param){
+	function generateParam(uint256[] memory a) internal view returns (Param memory param){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 		param.Gs = new alt_bn128.G1Point[](a.length);
 		for (uint256 i = 0; i < a.length; i++){
@@ -52,41 +47,17 @@ contract NISA{
 		}
 	}
 
-	function log2(uint n) public pure returns (uint ndigits){
-		ndigits = 0;
-		while (n > 1){
-			ndigits += 1;
-			n = n/2;
-		}
-	}
-
-	function test(uint256[] memory a) public returns (Proof memory) {
-		Param memory param = generateParam(a);
-		Param memory sec = generateParam(a); // second copy
-		Proof memory p = prove(param, a);
-		// return verify(sec, p);
-		return p;
-	}
-
-	function test2(uint256[] memory a) public returns (bool) {
-		Param memory param = generateParam(a);
-		// Param memory sec = generateParam(a); // second copy
-		Proof memory p = prove(param, a);
-		return verify(param, p);
-	}
-
 	/** Gs : public keys
 		P : prod_i (g_i ^ a_i)
 		c : sum_i a_i
 	 */
-	function prove(Param memory param, uint256[] memory a) public
+	function prove(Param memory param, uint256[] memory a) public view
 	returns (Proof memory p){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 
 		uint length = log2(a.length);
-		Var memory v;
-		v.Ls = new alt_bn128.G1Point[](length);
-		v.Rs = new alt_bn128.G1Point[](length);
+		p.Ls = new alt_bn128.G1Point[](length);
+		p.Rs = new alt_bn128.G1Point[](length);
 
 		uint256 H_z = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(param.P), alt_bn128.serialize(u), param.c)));
 		
@@ -107,7 +78,7 @@ contract NISA{
 
 			// L && R
 			(L, R) = LR(Gs, a, b, u_prime);
-			v.Ls[idx] = L; v.Rs[idx] = R;
+			p.Ls[idx] = L; p.Rs[idx] = R;
 
 			x = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(L), alt_bn128.serialize(R))));
 
@@ -115,7 +86,8 @@ contract NISA{
 			(Gs, a, b) = nextRound(Gs, a, b, x);
 		}
 
-		p = Proof(v.Ls, v.Rs, a[0], b[0]);
+		p.a = a[0];
+		p.b = b[0];
 	}
 
 	function LR(alt_bn128.G1Point[] memory Gs, uint256[] memory a, uint256[] memory b, alt_bn128.G1Point memory u_prime) internal view 
@@ -158,9 +130,7 @@ contract NISA{
 	returns (bool){
 		uint256 H_z = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(param.P), alt_bn128.serialize(u), param.c)));
 
-		alt_bn128.G1Point memory u_prime = alt_bn128.mul(u, H_z);
-		
-		alt_bn128.G1Point memory P_prime = alt_bn128.add(param.P, alt_bn128.mul(u_prime, param.c));
+		alt_bn128.G1Point memory P_prime = alt_bn128.add(param.P, alt_bn128.mul(u, alt_bn128.mul(param.c, H_z)));
 
 		uint length = log2(param.Gs.length);
 
@@ -177,9 +147,9 @@ contract NISA{
 			ys[i] = 1;
 			for (uint j = 0; j < length; j++){
 				if (check_bit(i, j)){
-					ys[i] = alt_bn128.mul(ys[i], xs[j]);
+					ys[i] = alt_bn128.mul(ys[i], xs[length-j-1]);
 				} else {
-					ys[i] = alt_bn128.mul(ys[i], xs_inv[j]);
+					ys[i] = alt_bn128.mul(ys[i], xs_inv[length-j-1]);
 				}
 			}
 		}
@@ -206,6 +176,14 @@ contract NISA{
 		right_point = alt_bn128.mul(right_point, p.a);
 
 		return alt_bn128.eq(left_point, right_point);
+	}
+
+	function log2(uint n) internal pure returns (uint ndigits){
+		ndigits = 0;
+		while (n > 1){
+			ndigits += 1;
+			n = n/2;
+		}
 	}
 
 	function check_bit(uint i, uint j) internal pure returns (bool){
