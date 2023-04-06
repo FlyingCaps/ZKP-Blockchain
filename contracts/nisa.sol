@@ -40,7 +40,7 @@ contract NISA{
 		P : prod_i (g_i ^ a_i)
 		c : sum_i a_i
 	 */
-	function generateParam(uint256[] memory a) internal view returns (Param memory param){
+	function generateParam(uint256[] memory a) public view returns (Param memory param){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 		param.Gs = new alt_bn128.G1Point[](a.length);
 		for (uint256 i = 0; i < a.length; i++){
@@ -131,48 +131,41 @@ contract NISA{
 
 	function verify(Param memory param, Proof memory p) public view 
 	returns (bool){
-		uint256 H_z = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(param.P), alt_bn128.serialize(u), param.c)));
-
-		alt_bn128.G1Point memory P_prime = alt_bn128.add(param.P, alt_bn128.mul(u, alt_bn128.mul(param.c, H_z)));
-
 		uint length = log2(param.Gs.length);
 
 		uint256[] memory xs = new uint256[](length);
-		// uint256[] memory xs_inv = new uint256[](length);
-		// uint256[] memory ys = new uint256[](param.Gs.length);
-		uint256 x_inv;
+		uint256[] memory xs_inv = new uint256[](length);
 		uint256 y;
 		// verify
-		alt_bn128.G1Point memory left_point = P_prime;
-		alt_bn128.G1Point memory right_point;
+		uint256 H_z = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(param.P), alt_bn128.serialize(u), param.c)));
+		alt_bn128.G1Point memory left_point = alt_bn128.add(param.P, alt_bn128.mul(u, alt_bn128.mul(param.c, H_z)));
 
 		y = 1;
 		for (uint i = 0; i < length; i++){
 			xs[i] = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(p.Ls[i]), alt_bn128.serialize(p.Rs[i]))));
-			x_inv = alt_bn128.inv(xs[i]);
+			xs_inv[i] = alt_bn128.inv(xs[i]);
 
 			left_point = alt_bn128.add(left_point, 
 				alt_bn128.mul(p.Ls[i], alt_bn128.mul(xs[i], xs[i]))
 			);
 			left_point = alt_bn128.add(left_point, 
-				alt_bn128.mul(p.Rs[i], alt_bn128.mul(x_inv, x_inv))
+				alt_bn128.mul(p.Rs[i], alt_bn128.mul(xs_inv[i], xs_inv[i]))
 			);
-
-			y = alt_bn128.mul(y, x_inv);
+			y = alt_bn128.mul(y, xs_inv[i]);
 		}
-		right_point = alt_bn128.mul(param.Gs[0], y);
+		alt_bn128.G1Point memory right_point = alt_bn128.mul(param.Gs[0], y);
 
-		// uint256 k;
+		// uint k;
 		for (uint i = 1; i < param.Gs.length; i++){
 			y = 1;
-			// k = length - 1; // length - j - 1
+			// k = length;
 			for (uint j = 0; j < length; j++){
+				// k--;
 				if (check_bit(i, j)){
 					y = alt_bn128.mul(y, xs[length-j-1]);
 				} else {
-					y = alt_bn128.mul(y, alt_bn128.inv(xs[length-j-1]));
+					y = alt_bn128.mul(y, xs_inv[length-j-1]);
 				}
-				// k--;
 			}
 			right_point = alt_bn128.add(right_point, alt_bn128.mul(param.Gs[i], y));
 		}

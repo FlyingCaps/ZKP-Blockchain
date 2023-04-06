@@ -40,7 +40,7 @@ contract NISA2{
 	}
 
   /** test correctness */
-  function test(uint256[] memory a) public returns (bool) {
+  function test(uint256[] memory a) public view returns (bool) {
 		Param memory param = generateParam(a);
 		Proof memory p = prove(param, a);
 		return verify(param, p);
@@ -51,7 +51,7 @@ contract NISA2{
 		P : prod_i (g_i ^ a_i)
 		c : sum_i a_i
 	 */
-	function generateParam(uint256[] memory a) internal view returns (Param memory param){
+	function generateParam(uint256[] memory a) public view returns (Param memory param){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 		param.Gs = new alt_bn128.G1Point[](a.length);
 		for (uint256 i = 0; i < a.length; i++){
@@ -65,7 +65,7 @@ contract NISA2{
 		}
 	}
 
-	function prove(Param memory param, uint256[] memory a) public
+	function prove(Param memory param, uint256[] memory a) public view
 	returns (Proof memory){
 		require(a.length & (a.length - 1) == 0, "vector length should be a power of 2");
 
@@ -84,7 +84,7 @@ contract NISA2{
 		return loop(Board(param.Gs, u_prime, a, b, Ls, Rs, 0));
 	}
 
-	function loop(Board memory board) public returns (Proof memory){
+	function loop(Board memory board) internal view returns (Proof memory){
 		if (board.a.length == 1) {
 			return Proof(board.Ls, board.Rs, board.a[0], board.b[0]);
 		}
@@ -137,7 +137,6 @@ contract NISA2{
 	function verify(Param memory param, Proof memory p) public view 
 	returns (bool){
 		uint256 H_z = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(param.P), alt_bn128.serialize(u), param.c)));
-
 		alt_bn128.G1Point memory P_prime = alt_bn128.add(param.P, alt_bn128.mul(u, alt_bn128.mul(param.c, H_z)));
 
 		uint length = log2(param.Gs.length);

@@ -22,7 +22,7 @@ library alt_bn128 {
         input[2] = p2.X;
         input[3] = p2.Y;
         assembly {
-            if iszero(staticcall(not(0), 6, input, 0x80, r, 0x40)) {
+            if iszero(staticcall(not(0), 0x06, input, 0x80, r, 0x40)) {
                 revert(0, 0)
             }
         }
@@ -65,7 +65,7 @@ library alt_bn128 {
         input[1] = p.Y;
         input[2] = s;
         assembly {
-            if iszero(staticcall(not(0), 7, input, 0x60, r, 0x40)) {
+            if iszero(staticcall(not(0), 0x07, input, 0x60, r, 0x40)) {
                 revert(0, 0)
             }
         }
@@ -90,31 +90,29 @@ library alt_bn128 {
         return mulmod(x, y, q);
     }
 
-
-    // function inv2(uint256 x) internal view returns (uint256) {
-    //     uint256 q = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
-    //     return modExp(x, q - 2, q);
-    // }
-
-    function inv(uint256 x) internal pure returns (uint) {
-        uint256 a = x;
-        if (a == 0)
-            return 0;
-        if (a > q)
-            a = a % q;
-        int t1;
-        int t2 = 1;
-        uint r1 = q;
-        uint r2 = a;
-        uint p;
-        while (r2 != 0) {
-            p = r1 / r2;
-            (t1, t2, r1, r2) = (t2, t1 - int(p) * t2, r2, r1 - p * r2);
-        }
-        if (t1 < 0)
-            return (q - uint(-t1));
-        return uint(t1);
+    function inv(uint256 x) internal view returns (uint256) {
+        return modExp(x, q - 2, q);
     }
+
+    // function inv(uint256 x) internal pure returns (uint) {
+    //     uint256 a = x;
+    //     if (a == 0)
+    //         return 0;
+    //     if (a > q)
+    //         a = a % q;
+    //     int t1;
+    //     int t2 = 1;
+    //     uint r1 = q;
+    //     uint r2 = a;
+    //     uint p;
+    //     while (r2 != 0) {
+    //         p = r1 / r2;
+    //         (t1, t2, r1, r2) = (t2, t1 - int(p) * t2, r2, r1 - p * r2);
+    //     }
+    //     if (t1 < 0)
+    //         return (q - uint(-t1));
+    //     return uint(t1);
+    // }
 
     function mod(uint256 x) internal pure returns (uint256) {
         return x % q;
@@ -138,7 +136,7 @@ library alt_bn128 {
         input[4] = exponent;
         input[5] = modulus;
         assembly {
-            if iszero(staticcall(not(0), 5, input, 0xc0, output, 0x20)) {
+            if iszero(staticcall(not(0), 0x05, input, 0xc0, output, 0x20)) {
                 revert(0, 0)
             }
         }
