@@ -138,46 +138,46 @@ contract NISA{
 		uint length = log2(param.Gs.length);
 
 		uint256[] memory xs = new uint256[](length);
-		uint256[] memory xs_inv = new uint256[](length);
+		// uint256[] memory xs_inv = new uint256[](length);
 		// uint256[] memory ys = new uint256[](param.Gs.length);
+		uint256 x_inv;
 		uint256 y;
 		// verify
-		alt_bn128.G1Point memory left_point;
+		alt_bn128.G1Point memory left_point = P_prime;
 		alt_bn128.G1Point memory right_point;
 
+		y = 1;
 		for (uint i = 0; i < length; i++){
 			xs[i] = uint256(keccak256(abi.encodePacked(alt_bn128.serialize(p.Ls[i]), alt_bn128.serialize(p.Rs[i]))));
-			xs_inv[i] = alt_bn128.inv(xs[i]);
-		}
-		y = 1;
-		for (uint j = 0; j < length; j++){
-			y = alt_bn128.mul(y, xs_inv[j]);
+			x_inv = alt_bn128.inv(xs[i]);
+
+			left_point = alt_bn128.add(left_point, 
+				alt_bn128.mul(p.Ls[i], alt_bn128.mul(xs[i], xs[i]))
+			);
+			left_point = alt_bn128.add(left_point, 
+				alt_bn128.mul(p.Rs[i], alt_bn128.mul(x_inv, x_inv))
+			);
+
+			y = alt_bn128.mul(y, x_inv);
 		}
 		right_point = alt_bn128.mul(param.Gs[0], y);
 
+		// uint256 k;
 		for (uint i = 1; i < param.Gs.length; i++){
 			y = 1;
+			// k = length - 1; // length - j - 1
 			for (uint j = 0; j < length; j++){
 				if (check_bit(i, j)){
 					y = alt_bn128.mul(y, xs[length-j-1]);
 				} else {
-					y = alt_bn128.mul(y, xs_inv[length-j-1]);
+					y = alt_bn128.mul(y, alt_bn128.inv(xs[length-j-1]));
 				}
+				// k--;
 			}
 			right_point = alt_bn128.add(right_point, alt_bn128.mul(param.Gs[i], y));
 		}
 		right_point = alt_bn128.add(right_point, alt_bn128.mul(alt_bn128.mul(u, H_z), p.b));
 		right_point = alt_bn128.mul(right_point, p.a);
-
-		left_point = P_prime;
-		for (uint i = 0; i < length; i++){
-			left_point = alt_bn128.add(left_point, 
-							alt_bn128.mul(p.Ls[i], alt_bn128.mul(xs[i], xs[i]))
-						);
-			left_point = alt_bn128.add(left_point, 
-							alt_bn128.mul(p.Rs[i], alt_bn128.mul(xs_inv[i], xs_inv[i]))
-						);
-		}
 
 		return alt_bn128.eq(left_point, right_point);
 	}
